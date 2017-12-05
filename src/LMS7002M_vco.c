@@ -50,8 +50,10 @@ static int LMS7002M_tune_vco_sweep(
         *vco_csw_reg |= 1 << i;
         LMS7002M_regs_spi_write(self, vco_csw_addr);
         LMS7002M_read_vco_cmp(self, vco_cmp_addr);
+        LMS7_logf(LMS7_DEBUG, self, "i=%d, hi=%d, lo=%d", i, *vco_cmpho_reg, *vco_cmplo_reg);
+        LMS7002M_read_vco_cmp(self, vco_cmp_addr);
+        LMS7_logf(LMS7_DEBUG, self, "i=%d, hi=%d, lo=%d", i, *vco_cmpho_reg, *vco_cmplo_reg);
 
-        LMS7_logf(LMS7_DEBUG, "i=%d, hi=%d, lo=%d", i, *vco_cmpho_reg, *vco_cmplo_reg);
         if (*vco_cmplo_reg != 0)
         {
             *vco_csw_reg &= ~(1 << i); //clear bit i
@@ -79,7 +81,7 @@ static int LMS7002M_tune_vco_sweep(
 
     *lo = csw_lowest;
     *hi = csw_highest;
-    LMS7_logf(LMS7_DEBUG, "lowest CSW_VCO %i, highest CSW_VCO %i", csw_lowest, csw_highest);
+    LMS7_logf(LMS7_DEBUG, self, "lowest CSW_VCO %i, highest CSW_VCO %i", csw_lowest, csw_highest);
     return 0;
 }
 
@@ -98,7 +100,7 @@ int LMS7002M_tune_vco(
     LMS7002M_read_vco_cmp(self, vco_cmp_addr);
     if (*vco_cmpho_reg == 1 && *vco_cmplo_reg == 1)
     {
-        LMS7_log(LMS7_DEBUG, "VCO select FAIL - too high");
+        LMS7_log(LMS7_DEBUG, self, "VCO select FAIL - too high");
         return -1;
     }
 
@@ -108,7 +110,7 @@ int LMS7002M_tune_vco(
     LMS7002M_read_vco_cmp(self, vco_cmp_addr);
     if (*vco_cmpho_reg == 0 && *vco_cmplo_reg == 0)
     {
-        LMS7_log(LMS7_DEBUG, "VCO select FAIL - too low");
+        LMS7_log(LMS7_DEBUG, self, "VCO select FAIL - too low");
         return -1;
     }
 
@@ -140,17 +142,17 @@ int LMS7002M_tune_vco(
     //set the midpoint of the search
     *vco_csw_reg = (csw_highest+csw_lowest)/2;
     LMS7002M_regs_spi_write(self, vco_csw_addr);
-    LMS7_logf(LMS7_DEBUG, "lowest CSW_VCO %i, highest CSW_VCO %i, CSW_VCO %i", csw_lowest, csw_highest, *vco_csw_reg);
+    LMS7_logf(LMS7_DEBUG, self, "lowest CSW_VCO %i, highest CSW_VCO %i, CSW_VCO %i", csw_lowest, csw_highest, *vco_csw_reg);
 
     //check that the vco selection was successful
     LMS7002M_read_vco_cmp(self, vco_cmp_addr);
     if (*vco_cmpho_reg != 0 && *vco_cmplo_reg == 0)
     {
-        LMS7_log(LMS7_DEBUG, "VCO OK");
+        LMS7_log(LMS7_DEBUG, self, "VCO OK");
     }
     else
     {
-        LMS7_log(LMS7_DEBUG, "VCO select FAIL");
+        LMS7_log(LMS7_DEBUG, self, "VCO select FAIL");
         return -1;
     }
     return 0;

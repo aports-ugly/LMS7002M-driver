@@ -7,7 +7,7 @@
 ///
 /// \copyright
 /// Copyright (c) 2016-2017 Skylark Wireless
-/// Copyright (c) 2014-2015 Fairwaves, Inc.
+/// Copyright (c) 2014-2017 Fairwaves, Inc.
 /// Copyright (c) 2014-2015 Rice University
 /// SPDX-License-Identifier: Apache-2.0
 /// http://www.apache.org/licenses/LICENSE-2.0
@@ -45,6 +45,10 @@ void LMS7002M_destroy(LMS7002M_t *self)
     free(self);
 }
 
+void* LMS7002M_get_spi_handle(LMS7002M_t *self)
+{
+    return self->spi_transact_handle;
+}
 /***********************************************************************
  * Helper calls to format SPI transactions
  **********************************************************************/
@@ -162,6 +166,61 @@ int LMS7002M_dump_ini(LMS7002M_t *self, const char *path)
     return fclose(p);
 }
 
+#if !defined(__linux)
+/* This function is public domain -- Will Hartung 4/9/09 */
+static ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
+    char *bufptr = NULL;
+    char *p = bufptr;
+    size_t size;
+    int c;
+
+    if (lineptr == NULL) {
+        return -1;
+    }
+    if (stream == NULL) {
+        return -1;
+    }
+    if (n == NULL) {
+        return -1;
+    }
+    bufptr = *lineptr;
+    size = *n;
+
+    c = fgetc(stream);
+    if (c == EOF) {
+        return -1;
+    }
+    if (bufptr == NULL) {
+        bufptr = malloc(128);
+        if (bufptr == NULL) {
+            return -1;
+        }
+        size = 128;
+    }
+    p = bufptr;
+    while(c != EOF) {
+        if ((p - bufptr) > ((ssize_t)size - 1)) {
+            size = size * 7 / 4;
+            bufptr = realloc(bufptr, size);
+            if (bufptr == NULL) {
+                return -1;
+            }
+        }
+        *p++ = c;
+        if (c == '\n') {
+            break;
+        }
+        c = fgetc(stream);
+    }
+
+    *p++ = '\0';
+    *lineptr = bufptr;
+    *n = size;
+
+    return p - bufptr - 1;
+}
+#endif
+
 int LMS7002M_load_ini(LMS7002M_t *self, const char *path)
 {
     FILE *p = fopen(path, "r");
@@ -191,13 +250,13 @@ int LMS7002M_load_ini(LMS7002M_t *self, const char *path)
         {
             if (strcmp(line, "[LMS7002 registers ch.A]") == 0)
             {
-                LMS7_logf(LMS7_INFO, "Found section %s", line);
+                LMS7_logf(LMS7_INFO, self, "Found section %s", line);
                 write_reg_ok = true;
                 chan = LMS_CHA;
             }
             else if (strcmp(line, "[LMS7002 registers ch.B]") == 0)
             {
-                LMS7_logf(LMS7_INFO, "Found section %s", line);
+                LMS7_logf(LMS7_INFO, self, "Found section %s", line);
                 write_reg_ok = true;
                 chan = LMS_CHB;
             }
@@ -214,7 +273,7 @@ int LMS7002M_load_ini(LMS7002M_t *self, const char *path)
                 LMS7002M_set_mac_ch(self, chan);
                 LMS7002M_spi_write(self, addr, value);
                 LMS7002M_regs_set(self->regs, addr, value);
-                LMS7_logf(LMS7_DEBUG, "Load: 0x%04x=0x%04x", addr, value);
+                LMS7_logf(LMS7_DEBUG, self, "Load: 0x%04x=0x%04x", addr, value);
             }
         }
 

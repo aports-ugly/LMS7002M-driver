@@ -40,7 +40,7 @@ typedef struct
 }
 LMS7002M_sxx_tune_state;
 
-int LMS7002M_sxx_calc_tune_state(
+int LMS7002M_sxx_calc_tune_state(LMS7002M_t *self,
     const double fref, const double fout,
     const double VCO_LO, const double VCO_HI,
     LMS7002M_sxx_tune_state *s)
@@ -65,7 +65,7 @@ int LMS7002M_sxx_calc_tune_state(
 
         s->Ndiv = fout*s->fdiv/fref;
         s->fvco = fout*s->fdiv;
-        LMS7_logf(LMS7_DEBUG, "fdiv = %d, Ndiv = %f, fvco = %f MHz", s->fdiv, s->Ndiv, s->fvco/1e6);
+        LMS7_logf(LMS7_DEBUG, self, "fdiv = %d, Ndiv = %f, fvco = %f MHz", s->fdiv, s->Ndiv, s->fvco/1e6);
 
         //check dividers and vco in range...
         if (s->fdiv > 128) return -1;
@@ -78,7 +78,7 @@ int LMS7002M_sxx_calc_tune_state(
 
         break; //its good
     }
-    LMS7_logf(LMS7_DEBUG, "fdiv = %d, Ndiv = %f, fvco = %f MHz", s->fdiv, s->Ndiv, s->fvco/1e6);
+    LMS7_logf(LMS7_DEBUG, self, "fdiv = %d, Ndiv = %f, fvco = %f MHz", s->fdiv, s->Ndiv, s->fvco/1e6);
 
     //deal with VCO divider
     s->EN_DIV2 = (s->fvco > 5.5e9)?1:0;
@@ -116,7 +116,7 @@ void LMS7002M_sxx_apply_tune_state(LMS7002M_t *self, const LMS7002M_sxx_tune_sta
     self->regs->reg_0x011d_frac_sdm = (s->Nfrac) & 0xffff; //lower 16 bits
     self->regs->reg_0x011e_frac_sdm = (s->Nfrac) >> 16; //upper 4 bits
     self->regs->reg_0x011e_int_sdm = s->Nint;
-    LMS7_logf(LMS7_DEBUG, "fdiv = %d, Ndiv = %f, Nint = %d, Nfrac = %d, DIV_LOCH_SX = %d, fvco = %f MHz", s->fdiv, s->Ndiv, s->Nint, s->Nfrac, s->DIV_LOCH_SX, s->fvco/1e6);
+    LMS7_logf(LMS7_DEBUG, self, "fdiv = %d, Ndiv = %f, Nint = %d, Nfrac = %d, DIV_LOCH_SX = %d, fvco = %f MHz", s->fdiv, s->Ndiv, s->Nint, s->Nfrac, s->DIV_LOCH_SX, s->fvco/1e6);
     LMS7002M_regs_spi_write(self, 0x011d);
     LMS7002M_regs_spi_write(self, 0x011e);
 
@@ -128,7 +128,7 @@ void LMS7002M_sxx_apply_tune_state(LMS7002M_t *self, const LMS7002M_sxx_tune_sta
 
 int LMS7002M_set_lo_freq(LMS7002M_t *self, const LMS7002M_dir_t direction, const double fref, const double fout, double *factual)
 {
-    LMS7_logf(LMS7_INFO, "SXX tune %f MHz (fref=%f MHz) begin", fout/1e6, fref/1e6);
+    LMS7_logf(LMS7_INFO, self, "SXX tune %f MHz (fref=%f MHz) begin", fout/1e6, fref/1e6);
 
     LMS7002M_set_mac_dir(self, direction);
 
@@ -140,9 +140,9 @@ int LMS7002M_set_lo_freq(LMS7002M_t *self, const LMS7002M_dir_t direction, const
 
     //state for each VCO
     LMS7002M_sxx_tune_state states[3];
-    LMS7002M_sxx_calc_tune_state(fref, fout, LMS7002M_SXX_VCOL_LO, LMS7002M_SXX_VCOL_HI, states+0);
-    LMS7002M_sxx_calc_tune_state(fref, fout, LMS7002M_SXX_VCOM_LO, LMS7002M_SXX_VCOM_HI, states+1);
-    LMS7002M_sxx_calc_tune_state(fref, fout, LMS7002M_SXX_VCOH_LO, LMS7002M_SXX_VCOH_HI, states+2);
+    LMS7002M_sxx_calc_tune_state(self, fref, fout, LMS7002M_SXX_VCOL_LO, LMS7002M_SXX_VCOL_HI, states+0);
+    LMS7002M_sxx_calc_tune_state(self, fref, fout, LMS7002M_SXX_VCOM_LO, LMS7002M_SXX_VCOM_HI, states+1);
+    LMS7002M_sxx_calc_tune_state(self, fref, fout, LMS7002M_SXX_VCOH_LO, LMS7002M_SXX_VCOH_HI, states+2);
 
     //try several VCO settings to establish the best one
     int SEL_VCO_best = -1;
@@ -159,7 +159,7 @@ int LMS7002M_set_lo_freq(LMS7002M_t *self, const LMS7002M_dir_t direction, const
         LMS7002M_sxx_apply_tune_state(self, s);
 
         //select vco based on freq
-        LMS7_logf(LMS7_DEBUG, "Testing for SEL_VCO = %d", SEL_VCO_i);
+        LMS7_logf(LMS7_DEBUG, self, "Testing for SEL_VCO = %d", SEL_VCO_i);
         self->regs->reg_0x0121_sel_vco = SEL_VCO_i;
         LMS7002M_regs_spi_write(self, 0x0121);
 
@@ -179,10 +179,10 @@ int LMS7002M_set_lo_freq(LMS7002M_t *self, const LMS7002M_dir_t direction, const
     //failed to tune any VCO
     if (SEL_VCO_best == -1)
     {
-        LMS7_log(LMS7_ERROR, "VCO select FAIL");
+        LMS7_log(LMS7_ERROR, self, "VCO select FAIL");
         return -3;
     }
-    LMS7_logf(LMS7_DEBUG, "Choosing SEL_VCO = %d", SEL_VCO_best);
+    LMS7_logf(LMS7_DEBUG, self, "Choosing SEL_VCO = %d", SEL_VCO_best);
 
     //select the best VCO now
     self->regs->reg_0x0121_csw_vco = CSW_VCO_best;
@@ -204,6 +204,11 @@ int LMS7002M_set_lo_freq(LMS7002M_t *self, const LMS7002M_dir_t direction, const
 
     //calculate the actual rate
     if (factual != NULL) *factual = (1 << s->EN_DIV2) * fref * ((s->Nint+4) + (s->Nfrac/((double)(1 << 20)))) / s->fdiv;
+
+    self->regs->reg_0x0100_en_nexttx_trf = true;
+    self->regs->reg_0x010d_en_nextrx_rfe = true;
+
+
 
     return 0; //OK
 }

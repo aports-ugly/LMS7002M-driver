@@ -26,11 +26,13 @@ extern "C" {
  */
 LMS7002M_API long long LMS7_time_tps(void);
 
+#if 0
 /*!
  * Query the current time in tick counts.
  * \return an absolute time in tick counts
  */
 LMS7002M_API long long LMS7_time_now(void);
+#endif
 
 /*!
  * Sleep the caller for the specified number of ticks.
@@ -38,11 +40,13 @@ LMS7002M_API long long LMS7_time_now(void);
  */
 LMS7002M_API void LMS7_sleep_for(const long long ticks);
 
+#if 0
 /*!
  * Sleep the caller until the specified time expires..
  * \param ticks an absolute time in tick counts
  */
 LMS7002M_API void LMS7_sleep_until(const long long ticks);
+#endif
 
 #ifdef __cplusplus
 }

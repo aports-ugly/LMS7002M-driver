@@ -4,7 +4,7 @@
 /// Lime-light config for the LMS7002M C driver.
 ///
 /// \copyright
-/// Copyright (c) 2014-2016 Fairwaves, Inc.
+/// Copyright (c) 2014-2017 Fairwaves, Inc.
 /// Copyright (c) 2014-2016 Rice University
 /// SPDX-License-Identifier: Apache-2.0
 /// http://www.apache.org/licenses/LICENSE-2.0
@@ -95,6 +95,42 @@ void LMS7002M_power_down(LMS7002M_t *self)
     LMS7002M_sxx_enable(self, LMS_TX, false);
 }
 
+void LMS7002M_lml_en(LMS7002M_t *self)
+{
+    self->regs->reg_0x0020_lrst_tx_b = 1;
+    self->regs->reg_0x0020_mrst_tx_b = 1;
+    self->regs->reg_0x0020_lrst_tx_a = 1;
+    self->regs->reg_0x0020_mrst_tx_a = 1;
+    self->regs->reg_0x0020_lrst_rx_b = 1;
+    self->regs->reg_0x0020_mrst_rx_b = 1;
+    self->regs->reg_0x0020_lrst_rx_a = 1;
+    self->regs->reg_0x0020_mrst_rx_a = 1;
+    self->regs->reg_0x0020_srst_rxfifo = 1;
+    self->regs->reg_0x0020_srst_txfifo = 1;
+    self->regs->reg_0x0020_rxen_b = 1;
+    self->regs->reg_0x0020_rxen_a = 1;
+    self->regs->reg_0x0020_txen_b = 1;
+    self->regs->reg_0x0020_txen_a = 1;
+    self->regs->reg_0x0020_mac = REG_0X0020_MAC_CHAB;
+
+    LMS7002M_regs_spi_write(self, 0x0020);
+
+    self->regs->reg_0x0022_iq_set_en_1_pe = 1;
+    self->regs->reg_0x0022_iq_set_en_2_pe = 1;
+    LMS7002M_regs_spi_write(self, 0x0022);
+
+    self->regs->reg_0x002e_mimo_siso = 0;
+    LMS7002M_regs_spi_write(self, 0x002E);
+}
+
+void LMS7002M_configure_lml_port_rdfclk(LMS7002M_t *self, const LMS7002M_port_t portNo)
+{
+    LMS7002M_set_mac_ch(self, LMS_CHAB);
+
+    self->regs->reg_0x002a_rxrdclk_mux = (portNo==LMS_PORT1)?REG_0X002A_RXRDCLK_MUX_FCLK1:REG_0X002A_RXRDCLK_MUX_FCLK2;
+    LMS7002M_regs_spi_write(self, 0x002A);
+}
+
 void LMS7002M_configure_lml_port(LMS7002M_t *self, const LMS7002M_port_t portNo, const LMS7002M_dir_t direction, const int mclkDiv)
 {
     //LML is in global register space
@@ -105,13 +141,13 @@ void LMS7002M_configure_lml_port(LMS7002M_t *self, const LMS7002M_port_t portNo,
     {
         self->regs->reg_0x0023_lml1_mode = REG_0X0023_LML1_MODE_TRXIQ;
         self->regs->reg_0x0023_lml1_rxntxiq = (direction==LMS_TX)?
-            REG_0X0023_LML1_RXNTXIQ_RXIQ:REG_0X0023_LML1_RXNTXIQ_TXIQ; //WARNING: TX/RX perspective swap
+                    REG_0X0023_LML1_RXNTXIQ_RXIQ:REG_0X0023_LML1_RXNTXIQ_TXIQ; //WARNING: TX/RX perspective swap
     }
     if (portNo == LMS_PORT2)
     {
         self->regs->reg_0x0023_lml2_mode = REG_0X0023_LML2_MODE_TRXIQ;
         self->regs->reg_0x0023_lml2_rxntxiq = (direction==LMS_TX)?
-            REG_0X0023_LML2_RXNTXIQ_RXIQ:REG_0X0023_LML2_RXNTXIQ_TXIQ; //WARNING: TX/RX perspective swap
+                    REG_0X0023_LML2_RXNTXIQ_RXIQ:REG_0X0023_LML2_RXNTXIQ_TXIQ; //WARNING: TX/RX perspective swap
     }
 
     //automatic directions based on mode above
@@ -122,11 +158,13 @@ void LMS7002M_configure_lml_port(LMS7002M_t *self, const LMS7002M_port_t portNo,
     if (direction == LMS_TX)
     {
         self->regs->reg_0x002a_txrdclk_mux = REG_0X002A_TXRDCLK_MUX_TXTSPCLK;
-        self->regs->reg_0x002a_txwrclk_mux = (portNo==LMS_PORT1)?REG_0X002A_TXWRCLK_MUX_FCLK1:REG_0X002A_TXWRCLK_MUX_FCLK2;
+        self->regs->reg_0x002a_txwrclk_mux = (portNo==LMS_PORT1)?
+                    REG_0X002A_TXWRCLK_MUX_FCLK1:REG_0X002A_TXWRCLK_MUX_FCLK2;
     }
     if (direction == LMS_RX)
     {
-        self->regs->reg_0x002a_rxrdclk_mux = (portNo==LMS_PORT1)?REG_0X002A_RXRDCLK_MUX_MCLK1:REG_0X002A_RXRDCLK_MUX_MCLK2;
+        self->regs->reg_0x002a_rxrdclk_mux = (portNo==LMS_PORT1)?
+                    REG_0X002A_RXRDCLK_MUX_MCLK1:REG_0X002A_RXRDCLK_MUX_MCLK2;
         self->regs->reg_0x002a_rxwrclk_mux = REG_0X002A_RXWRCLK_MUX_RXTSPCLK;
     }
 
@@ -182,6 +220,47 @@ void LMS7002M_invert_fclk(LMS7002M_t *self, const bool invert)
     LMS7002M_regs_spi_write(self, 0x002B);
 }
 
+void LMS7002M_invert_fclk_ex(LMS7002M_t *self, const LMS7002M_port_t portNo, const bool invert)
+{
+    //LML is in global register space
+    LMS7002M_set_mac_ch(self, LMS_CHAB);
+
+    if (portNo == LMS_PORT1)
+    {
+        self->regs->reg_0x002b_fclk1_inv = invert?1:0;
+    }
+
+    if (portNo == LMS_PORT2)
+    {
+        self->regs->reg_0x002b_fclk2_inv = invert?1:0;
+    }
+    LMS7002M_regs_spi_write(self, 0x002B);
+}
+
+void LMS7002M_invert_mclk_ex(LMS7002M_t *self, const LMS7002M_port_t portNo, const bool invert)
+{
+    //LML is in global register space
+    LMS7002M_set_mac_ch(self, LMS_CHAB);
+
+    if (portNo == LMS_PORT1)
+    {
+        self->regs->reg_0x002b_mclk1_inv = invert?1:0;
+    }
+
+    if (portNo == LMS_PORT2)
+    {
+        self->regs->reg_0x002b_mclk2_inv = invert?1:0;
+    }
+    LMS7002M_regs_spi_write(self, 0x002B);
+}
+
+void LMS7002M_set_drive_strength(LMS7002M_t *self, const bool highdiq1, const bool highdiq2)
+{
+    self->regs->reg_0x0022_diq1_ds = (highdiq1) ? 1 : 0;
+    self->regs->reg_0x0022_diq2_ds = (highdiq2) ? 1 : 0;
+    LMS7002M_regs_spi_write(self, 0x0022);
+}
+
 void LMS7002M_setup_digital_loopback(LMS7002M_t *self)
 {
     //LML is in global register space
@@ -189,6 +268,7 @@ void LMS7002M_setup_digital_loopback(LMS7002M_t *self)
 
     self->regs->reg_0x002a_rx_mux = REG_0X002A_RX_MUX_TXFIFO;
     //self->regs->reg_0x002a_rx_mux = REG_0X002A_RX_MUX_LFSR;
+
     if (self->regs->reg_0x002a_txwrclk_mux == REG_0X002A_TXWRCLK_MUX_FCLK1)
     {
         self->regs->reg_0x002a_rxwrclk_mux = REG_0X002A_RXWRCLK_MUX_FCLK1;
@@ -197,6 +277,18 @@ void LMS7002M_setup_digital_loopback(LMS7002M_t *self)
     {
         self->regs->reg_0x002a_rxwrclk_mux = REG_0X002A_RXWRCLK_MUX_FCLK2;
     }
+
+
+    //self->regs->reg_0x002a_rxwrclk_mux = REG_0X002A_RXWRCLK_MUX_FCLK1;
+
+    LMS7002M_regs_spi_write(self, 0x002A);
+}
+
+void LMS7002M_setup_rx_lfsr(LMS7002M_t *self)
+{
+    LMS7002M_set_mac_ch(self, LMS_CHAB);
+
+    self->regs->reg_0x002a_rx_mux = REG_0X002A_RX_MUX_LFSR;
     LMS7002M_regs_spi_write(self, 0x002A);
 }
 
@@ -244,12 +336,13 @@ void LMS7002M_set_mac_dir(LMS7002M_t *self, const LMS7002M_dir_t direction)
     {
     case LMS_RX: LMS7002M_set_mac_ch(self, LMS_CHA); break;
     case LMS_TX: LMS7002M_set_mac_ch(self, LMS_CHB); break;
+    default: break;
     }
 }
 
 static inline int __lms7002m_diq_index(const int search, const int positions[4])
 {
-    for (size_t i = 0; i < 4; i++)
+    for (int i = 0; i < 4; i++)
     {
         if (search == positions[i]) return i;
     }
@@ -289,4 +382,34 @@ void LMS7002M_set_diq_mux(LMS7002M_t *self, const LMS7002M_dir_t direction, cons
 
     LMS7002M_regs_spi_write(self, 0x0024);
     LMS7002M_regs_spi_write(self, 0x0027);
+}
+
+void LMS7002M_set_jesd207_latency(LMS7002M_t *self, const LMS7002M_dir_t direction, int start, int stop)
+{
+    //LML is in global register space
+    LMS7002M_set_mac_ch(self, LMS_CHAB);
+
+    if (direction == LMS_TX)
+    {
+        self->regs->reg_0x0025_lml1_bb2rf_pre = start;
+        self->regs->reg_0x0025_lml1_bb2rf_pst = stop;
+
+        self->regs->reg_0x0028_lml2_bb2rf_pre = start;
+        self->regs->reg_0x0028_lml2_bb2rf_pst = stop;
+
+        LMS7002M_regs_spi_write(self, 0x0025);
+        LMS7002M_regs_spi_write(self, 0x0028);
+    }
+
+    if (direction == LMS_RX)
+    {
+        self->regs->reg_0x0026_lml1_rf2bb_pre = start;
+        self->regs->reg_0x0026_lml1_rf2bb_pst = stop;
+
+        self->regs->reg_0x0029_lml2_rf2bb_pre = start;
+        self->regs->reg_0x0029_lml2_rf2bb_pst = stop;
+
+        LMS7002M_regs_spi_write(self, 0x0026);
+        LMS7002M_regs_spi_write(self, 0x0029);
+    }
 }

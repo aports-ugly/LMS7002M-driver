@@ -228,13 +228,13 @@ struct LMS7002M_regs_struct
     int reg_0x0021_spimode;
     int reg_0x0022_diq2_ds;
     int reg_0x0022_diq2_pe;
-    int reg_0x0022_iq_sel_en_2_pe;
+    int reg_0x0022_iq_set_en_2_pe;
     int reg_0x0022_txnrx2_pe;
     int reg_0x0022_fclk2_pe;
     int reg_0x0022_mclk2_pe;
     int reg_0x0022_diq1_ds;
     int reg_0x0022_diq1_pe;
-    int reg_0x0022_iq_sel_en_1_pe;
+    int reg_0x0022_iq_set_en_1_pe;
     int reg_0x0022_txnrx1_pe;
     int reg_0x0022_fclk1_pe;
     int reg_0x0022_mclk1_pe;
@@ -261,8 +261,10 @@ struct LMS7002M_regs_struct
     int reg_0x0024_lml1_bip;
     int reg_0x0024_lml1_aqp;
     int reg_0x0024_lml1_aip;
-    int reg_0x0025_value;
-    int reg_0x0026_value;
+    int reg_0x0025_lml1_bb2rf_pst;
+    int reg_0x0025_lml1_bb2rf_pre;
+    int reg_0x0026_lml1_rf2bb_pst;
+    int reg_0x0026_lml1_rf2bb_pre;
     int reg_0x0027_lml2_s3s;
     int reg_0x0027_lml2_s2s;
     int reg_0x0027_lml2_s1s;
@@ -271,8 +273,10 @@ struct LMS7002M_regs_struct
     int reg_0x0027_lml2_bip;
     int reg_0x0027_lml2_aqp;
     int reg_0x0027_lml2_aip;
-    int reg_0x0028_value;
-    int reg_0x0029_value;
+    int reg_0x0028_lml2_bb2rf_pst;
+    int reg_0x0028_lml2_bb2rf_pre;
+    int reg_0x0029_lml2_rf2bb_pst;
+    int reg_0x0029_lml2_rf2bb_pre;
     int reg_0x002a_rx_mux;
     int reg_0x002a_tx_mux;
     int reg_0x002a_txrdclk_mux;
@@ -281,6 +285,8 @@ struct LMS7002M_regs_struct
     int reg_0x002a_rxwrclk_mux;
     int reg_0x002b_fclk2_inv;
     int reg_0x002b_fclk1_inv;
+    int reg_0x002b_mclk2_inv;
+    int reg_0x002b_mclk1_inv;
     int reg_0x002b_mclk2src;
     int reg_0x002b_mclk1src;
     int reg_0x002b_txdiven;
@@ -1117,13 +1123,13 @@ static inline void LMS7002M_regs_set(LMS7002M_regs_t *regs, const int addr, cons
     {
         regs->reg_0x0022_diq2_ds = (value >> 11) & 0x1;
         regs->reg_0x0022_diq2_pe = (value >> 10) & 0x1;
-        regs->reg_0x0022_iq_sel_en_2_pe = (value >> 9) & 0x1;
+        regs->reg_0x0022_iq_set_en_2_pe = (value >> 9) & 0x1;
         regs->reg_0x0022_txnrx2_pe = (value >> 8) & 0x1;
         regs->reg_0x0022_fclk2_pe = (value >> 7) & 0x1;
         regs->reg_0x0022_mclk2_pe = (value >> 6) & 0x1;
         regs->reg_0x0022_diq1_ds = (value >> 5) & 0x1;
         regs->reg_0x0022_diq1_pe = (value >> 4) & 0x1;
-        regs->reg_0x0022_iq_sel_en_1_pe = (value >> 3) & 0x1;
+        regs->reg_0x0022_iq_set_en_1_pe = (value >> 3) & 0x1;
         regs->reg_0x0022_txnrx1_pe = (value >> 2) & 0x1;
         regs->reg_0x0022_fclk1_pe = (value >> 1) & 0x1;
         regs->reg_0x0022_mclk1_pe = (value >> 0) & 0x1;
@@ -1162,12 +1168,14 @@ static inline void LMS7002M_regs_set(LMS7002M_regs_t *regs, const int addr, cons
     }
     if (addr == 0x0025)
     {
-        regs->reg_0x0025_value = (value >> 0) & 0xffff;
+        regs->reg_0x0025_lml1_bb2rf_pst = (value >> 8) & 0xf;
+        regs->reg_0x0025_lml1_bb2rf_pre = (value >> 0) & 0x1f;
         return;
     }
     if (addr == 0x0026)
     {
-        regs->reg_0x0026_value = (value >> 0) & 0xffff;
+        regs->reg_0x0026_lml1_rf2bb_pst = (value >> 8) & 0xf;
+        regs->reg_0x0026_lml1_rf2bb_pre = (value >> 0) & 0x1f;
         return;
     }
     if (addr == 0x0027)
@@ -1184,12 +1192,14 @@ static inline void LMS7002M_regs_set(LMS7002M_regs_t *regs, const int addr, cons
     }
     if (addr == 0x0028)
     {
-        regs->reg_0x0028_value = (value >> 0) & 0xffff;
+        regs->reg_0x0028_lml2_bb2rf_pst = (value >> 8) & 0xf;
+        regs->reg_0x0028_lml2_bb2rf_pre = (value >> 0) & 0x1f;
         return;
     }
     if (addr == 0x0029)
     {
-        regs->reg_0x0029_value = (value >> 0) & 0xffff;
+        regs->reg_0x0029_lml2_rf2bb_pst = (value >> 8) & 0xf;
+        regs->reg_0x0029_lml2_rf2bb_pre = (value >> 0) & 0x1f;
         return;
     }
     if (addr == 0x002A)
@@ -1206,6 +1216,8 @@ static inline void LMS7002M_regs_set(LMS7002M_regs_t *regs, const int addr, cons
     {
         regs->reg_0x002b_fclk2_inv = (value >> 15) & 0x1;
         regs->reg_0x002b_fclk1_inv = (value >> 14) & 0x1;
+        regs->reg_0x002b_mclk2_inv = (value >> 9) & 0x1;
+        regs->reg_0x002b_mclk1_inv = (value >> 8) & 0x1;
         regs->reg_0x002b_mclk2src = (value >> 4) & 0x3;
         regs->reg_0x002b_mclk1src = (value >> 2) & 0x3;
         regs->reg_0x002b_txdiven = (value >> 1) & 0x1;
@@ -2280,13 +2292,13 @@ static inline int LMS7002M_regs_get(LMS7002M_regs_t *regs, const int addr)
     {
         value |= (regs->reg_0x0022_diq2_ds & 0x1) << 11;
         value |= (regs->reg_0x0022_diq2_pe & 0x1) << 10;
-        value |= (regs->reg_0x0022_iq_sel_en_2_pe & 0x1) << 9;
+        value |= (regs->reg_0x0022_iq_set_en_2_pe & 0x1) << 9;
         value |= (regs->reg_0x0022_txnrx2_pe & 0x1) << 8;
         value |= (regs->reg_0x0022_fclk2_pe & 0x1) << 7;
         value |= (regs->reg_0x0022_mclk2_pe & 0x1) << 6;
         value |= (regs->reg_0x0022_diq1_ds & 0x1) << 5;
         value |= (regs->reg_0x0022_diq1_pe & 0x1) << 4;
-        value |= (regs->reg_0x0022_iq_sel_en_1_pe & 0x1) << 3;
+        value |= (regs->reg_0x0022_iq_set_en_1_pe & 0x1) << 3;
         value |= (regs->reg_0x0022_txnrx1_pe & 0x1) << 2;
         value |= (regs->reg_0x0022_fclk1_pe & 0x1) << 1;
         value |= (regs->reg_0x0022_mclk1_pe & 0x1) << 0;
@@ -2322,11 +2334,13 @@ static inline int LMS7002M_regs_get(LMS7002M_regs_t *regs, const int addr)
     }
     if (addr == 0x0025)
     {
-        value |= (regs->reg_0x0025_value & 0xffff) << 0;
+        value |= (regs->reg_0x0025_lml1_bb2rf_pst & 0xf) << 8;
+        value |= (regs->reg_0x0025_lml1_bb2rf_pre & 0x1f) << 0;
     }
     if (addr == 0x0026)
     {
-        value |= (regs->reg_0x0026_value & 0xffff) << 0;
+        value |= (regs->reg_0x0026_lml1_rf2bb_pst & 0xf) << 8;
+        value |= (regs->reg_0x0026_lml1_rf2bb_pre & 0x1f) << 0;
     }
     if (addr == 0x0027)
     {
@@ -2341,11 +2355,13 @@ static inline int LMS7002M_regs_get(LMS7002M_regs_t *regs, const int addr)
     }
     if (addr == 0x0028)
     {
-        value |= (regs->reg_0x0028_value & 0xffff) << 0;
+        value |= (regs->reg_0x0028_lml2_bb2rf_pst & 0xf) << 8;
+        value |= (regs->reg_0x0028_lml2_bb2rf_pre & 0x1f) << 0;
     }
     if (addr == 0x0029)
     {
-        value |= (regs->reg_0x0029_value & 0xffff) << 0;
+        value |= (regs->reg_0x0029_lml2_rf2bb_pst & 0xf) << 8;
+        value |= (regs->reg_0x0029_lml2_rf2bb_pre & 0x1f) << 0;
     }
     if (addr == 0x002A)
     {
@@ -2360,6 +2376,8 @@ static inline int LMS7002M_regs_get(LMS7002M_regs_t *regs, const int addr)
     {
         value |= (regs->reg_0x002b_fclk2_inv & 0x1) << 15;
         value |= (regs->reg_0x002b_fclk1_inv & 0x1) << 14;
+        value |= (regs->reg_0x002b_mclk2_inv & 0x1) << 9;
+        value |= (regs->reg_0x002b_mclk1_inv & 0x1) << 8;
         value |= (regs->reg_0x002b_mclk2src & 0x3) << 4;
         value |= (regs->reg_0x002b_mclk1src & 0x3) << 2;
         value |= (regs->reg_0x002b_txdiven & 0x1) << 1;

@@ -30,6 +30,9 @@ typedef enum
     LMS7_TRACE    = 8, //!< A tracing message. This is the lowest priority.
 } LMS7_log_level_t;
 
+//! The opaque instance of the LMS7002M instance
+struct LMS7002M_struct;
+
 /*!
  * Set module/process-wide logger level.
  * Anything above this level will be discarded.
@@ -42,7 +45,7 @@ LMS7002M_API void LMS7_set_log_level(const LMS7_log_level_t level);
  * \param level a possible logging level
  * \param message a logger message string
  */
-LMS7002M_API void LMS7_log(const LMS7_log_level_t level, const char *message);
+LMS7002M_API void LMS7_log(const LMS7_log_level_t level, struct LMS7002M_struct *obj, const char *message);
 
 /*!
  * Send a message to the registered logger.
@@ -50,25 +53,31 @@ LMS7002M_API void LMS7_log(const LMS7_log_level_t level, const char *message);
  * \param format a printf style format string
  * \param args an argument list for the formatter
  */
-LMS7002M_API void LMS7_vlogf(const LMS7_log_level_t level, const char *format, va_list args);
+LMS7002M_API void LMS7_vlogf(const LMS7_log_level_t level, struct LMS7002M_struct *obj, const char *format, va_list args);
 
 /*!
  * Send a message to the registered logger.
  * \param level a possible logging level
  * \param format a printf style format string
  */
-static inline void LMS7_logf(const LMS7_log_level_t level, const char *format, ...)
+static inline void LMS7_logf(const LMS7_log_level_t level, struct LMS7002M_struct *obj, const char *format, ...)
+#if (defined( __GNUC__) && (__GNUC__ > 3)) || defined(__clang__)
+  __attribute__ ((format (printf, 3, 4)))
+#endif
+;
+
+void LMS7_logf(const LMS7_log_level_t level, struct LMS7002M_struct *obj, const char *format, ...)
 {
     va_list args;
     va_start(args, format);
-    LMS7_vlogf(level, format, args);
+    LMS7_vlogf(level, obj, format, args);
     va_end(args);
 }
 
 /*!
  * Typedef for a user specified log handler function.
  */
-typedef void (*LMS7_log_handler_t)(const LMS7_log_level_t logLevel, const char *message);
+typedef void (*LMS7_log_handler_t)(const LMS7_log_level_t logLevel, struct LMS7002M_struct *obj, const char *message);
 
 /*!
  * Register a new system log handler.

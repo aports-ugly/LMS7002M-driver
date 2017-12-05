@@ -4,7 +4,7 @@
 /// Logging facilities for the LMS7002M C driver.
 ///
 /// \copyright
-/// Copyright (c) 2015-2015 Fairwaves, Inc.
+/// Copyright (c) 2015-2017 Fairwaves, Inc.
 /// Copyright (c) 2015-2015 Rice University
 /// SPDX-License-Identifier: Apache-2.0
 /// http://www.apache.org/licenses/LICENSE-2.0
@@ -31,8 +31,9 @@
 /***********************************************************************
  * Default log message handler implementation
  **********************************************************************/
-void default_handler(const LMS7_log_level_t level, const char *message)
+void default_handler(const LMS7_log_level_t level, struct LMS7002M_struct *obj, const char *message)
 {
+    (void)obj;
     switch (level)
     {
     case LMS7_FATAL:    fprintf(stderr, ANSI_COLOR_BOLD ANSI_COLOR_RED "[FATAL] %s" ANSI_COLOR_RESET "\n", message); break;
@@ -57,18 +58,18 @@ void LMS7_set_log_level(const LMS7_log_level_t level)
     _log_level = level;
 }
 
-void LMS7_log(const LMS7_log_level_t level, const char *message)
+void LMS7_log(const LMS7_log_level_t level, struct LMS7002M_struct *obj, const char *message)
 {
     if (level > _log_level) return;
-    _log_handler(level, message);
+    _log_handler(level, obj, message);
 }
 
-void LMS7_vlogf(const LMS7_log_level_t level, const char *format, va_list args)
+void LMS7_vlogf(const LMS7_log_level_t level, struct LMS7002M_struct *obj, const char *format, va_list args)
 {
     if (level > _log_level) return;
     char *message;
-    if (vasprintf(&message, format, args) < 0) return;
-    LMS7_log(level, message);
+    vasprintf(&message, format, args);
+    LMS7_log(level, obj, message);
     free(message);
 }
 

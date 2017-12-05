@@ -4,7 +4,7 @@
 /// Clock generation for the LMS7002M C driver.
 ///
 /// \copyright
-/// Copyright (c) 2014-2016 Fairwaves, Inc.
+/// Copyright (c) 2014-2017 Fairwaves, Inc.
 /// Copyright (c) 2014-2016 Rice University
 /// SPDX-License-Identifier: Apache-2.0
 /// http://www.apache.org/licenses/LICENSE-2.0
@@ -17,7 +17,12 @@
 
 int LMS7002M_set_data_clock(LMS7002M_t *self, const double fref, const double fout, double *factual)
 {
-    LMS7_logf(LMS7_INFO, "CGEN tune %f MHz (fref=%f MHz) begin", fout/1e6, fref/1e6);
+    return LMS7002M_set_data_clock_div(self, fref, false, 0, fout, factual);
+}
+
+int LMS7002M_set_data_clock_div(LMS7002M_t *self, const double fref, bool div_dac, unsigned divh, const double fout, double *factual)
+{
+    LMS7_logf(LMS7_INFO, self, "CGEN tune %f MHz (fref=%f MHz) begin", fout/1e6, fref/1e6);
 
     //always use the channel A shadow, CGEN is in global register space
     LMS7002M_set_mac_ch(self, LMS_CHA);
@@ -30,6 +35,11 @@ int LMS7002M_set_data_clock(LMS7002M_t *self, const double fref, const double fo
     double Ndiv = 0;
     double fvco = 0;
 
+    double coarse = LMS7002M_CGEN_VCO_HI*LMS7002M_CGEN_VCO_HI*LMS7002M_CGEN_VCO_HI;
+    int fdiv_c = 0;
+    double Ndiv_c = 0;
+    double fvco_c = 0;
+
     //calculation loop to find dividers that are possible
     while (true)
     {
@@ -38,21 +48,39 @@ int LMS7002M_set_data_clock(LMS7002M_t *self, const double fref, const double fo
 
         Ndiv = fout*fdiv/fref;
         fvco = fout*fdiv;
-        LMS7_logf(LMS7_TRACE, "Trying: fdiv = %d, Ndiv = %f, fvco = %f MHz", fdiv, Ndiv, fvco/1e6);
+
+        LMS7_logf(LMS7_TRACE, self, "Trying: fdiv = %d, Ndiv = %f, fvco = %f MHz (coarse=%.3e)", fdiv, Ndiv, fvco/1e6, coarse);
 
         //check dividers and vco in range...
-        if (fdiv < 2) return -1;
+        if ((fdiv < 2) || (Ndiv < 4)) {
+            if (fdiv_c != 0) {
+                // It's the best possible
+                fdiv = fdiv_c;
+                Ndiv = Ndiv_c;
+                fvco = fvco_c;
+                break;
+            }
+        }
         if (fdiv > 512) continue;
-        if (Ndiv < 4) return -1;
         if (Ndiv > 512) continue;
 
         //check vco boundaries
-        if (fvco < LMS7002M_CGEN_VCO_LO) continue;
-        if (fvco > LMS7002M_CGEN_VCO_HI) continue;
+        if ((fvco < LMS7002M_CGEN_VCO_LO) || (fvco > LMS7002M_CGEN_VCO_HI)) {
+            double c = (fvco - ((LMS7002M_CGEN_VCO_LO + LMS7002M_CGEN_VCO_HI)/2)) *
+                       (fvco - ((LMS7002M_CGEN_VCO_LO + LMS7002M_CGEN_VCO_HI)/2));
+
+            if (c < coarse) {
+                fdiv_c = fdiv;
+                Ndiv_c = Ndiv;
+                fvco_c = fvco;
+                coarse = c;
+            }
+            continue;
+        }
 
         break; //its good
     }
-    LMS7_logf(LMS7_DEBUG, "Using: fdiv = %d, Ndiv = %f, fvco = %f MHz", fdiv, Ndiv, fvco/1e6);
+    LMS7_logf(LMS7_DEBUG, self, "Using: fdiv = %d, Ndiv = %f, fvco = %f MHz", fdiv, Ndiv, fvco/1e6);
 
     //stash the freq now that we know the loop above passed
     self->cgen_freq = fout;
@@ -71,6 +99,7 @@ int LMS7002M_set_data_clock(LMS7002M_t *self, const double fref, const double fo
     LMS7002M_regs_spi_write(self, 0x0086);
 
     //configure and enable synthesizer
+    self->regs->reg_0x0086_en_adcclkh_clkgn = (div_dac) ? 1 : 0; //Div to DAC (FCLK ADC mode)
     self->regs->reg_0x0086_en_intonly_sdm_cgen = 0; //support frac-N
     self->regs->reg_0x0086_en_sdm_clk_cgen = 1; //enable
     self->regs->reg_0x0086_pd_cp_cgen = 0; //enable
@@ -91,13 +120,14 @@ int LMS7002M_set_data_clock(LMS7002M_t *self, const double fref, const double fo
     self->regs->reg_0x0087_frac_sdm_cgen = (Nfrac) & 0xffff; //lower 16 bits
     self->regs->reg_0x0088_frac_sdm_cgen = (Nfrac) >> 16; //upper 4 bits
     self->regs->reg_0x0088_int_sdm_cgen = Nint-1;
-    LMS7_logf(LMS7_DEBUG, "fdiv = %d, Ndiv = %f, Nint = %d, Nfrac = %d, fvco = %f MHz", fdiv, Ndiv, Nint, Nfrac, fvco/1e6);
+    LMS7_logf(LMS7_DEBUG, self, "fdiv = %d, Ndiv = %f, Nint = %d, Nfrac = %d, fvco = %f MHz", fdiv, Ndiv, Nint, Nfrac, fvco/1e6);
     LMS7002M_regs_spi_write(self, 0x0087);
     LMS7002M_regs_spi_write(self, 0x0088);
 
     //program the feedback divider
     self->regs->reg_0x0089_sel_sdmclk_cgen = REG_0X0089_SEL_SDMCLK_CGEN_CLK_DIV;
     self->regs->reg_0x0089_div_outch_cgen = (fdiv/2)-1;
+    self->regs->reg_0x0089_clkh_ov_clkl_cgen = divh;
     LMS7002M_regs_spi_write(self, 0x0089);
 
     //select the correct CSW for this VCO frequency
@@ -106,7 +136,7 @@ int LMS7002M_set_data_clock(LMS7002M_t *self, const double fref, const double fo
         &self->regs->reg_0x008c_vco_cmpho_cgen,
         &self->regs->reg_0x008c_vco_cmplo_cgen, 0x008C) != 0)
     {
-        LMS7_log(LMS7_ERROR, "VCO select FAIL");
+        LMS7_log(LMS7_ERROR, self, "CGEN VCO select FAIL");
         return -3;
     }
 

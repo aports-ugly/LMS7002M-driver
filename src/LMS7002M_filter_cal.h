@@ -22,7 +22,7 @@ uint16_t cal_read_rssi(LMS7002M_t *self, const LMS7002M_chan_t channel);
 void set_addrs_to_default(LMS7002M_t *self, const LMS7002M_chan_t channel, const int start_addr, const int stop_addr);
 
 //! Helper to perform the calibration baseband gain selection
-int cal_gain_selection(LMS7002M_t *self, const LMS7002M_chan_t channel);
+int cal_gain_selection(LMS7002M_t *self, const LMS7002M_chan_t channel, int rssi_level);
 
 //! Helper to setup clocking for calibration
 int cal_setup_cgen(LMS7002M_t *self, const double bw);

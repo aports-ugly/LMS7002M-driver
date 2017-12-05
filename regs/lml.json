@@ -66,6 +66,24 @@
     "default": "00000111 11011111"
 },
 {
+    "addr" : "0x0022",
+    "fields" : {
+        "DIQ2_DS" : {"bits":"11"},
+        "DIQ2_PE" : {"bits":"10"},
+        "IQ_SET_EN_2_PE" : {"bits":"9"},
+        "TXNRX2_PE" : {"bits":"8"},
+        "FCLK2_PE" : {"bits":"7"},
+        "MCLK2_PE" : {"bits":"6"},
+        "DIQ1_DS" : {"bits":"5"},
+        "DIQ1_PE" : {"bits":"4"},
+        "IQ_SET_EN_1_PE" : {"bits":"3"},
+        "TXNRX1_PE" : {"bits":"2"},
+        "FCLK1_PE" : {"bits":"1"},
+        "MCLK1_PE" : {"bits":"0"}
+    },
+    "default": "00000111 11011111"
+},
+{
     "addr" : "0x0023",
     "fields" : {
         "DIQDIRCTR2" : {"bits":"15"},
@@ -141,6 +159,22 @@
     "default": "11100100 11100100"
 },
 {
+    "addr" : "0x0025",
+    "fields" : {
+        "LML1_BB2RF_PST" : {"bits":"11:8"},
+        "LML1_BB2RF_PRE" : {"bits":"4:0"}
+    },
+    "default": "00000001 00000001"
+},
+{
+    "addr" : "0x0026",
+    "fields" : {
+        "LML1_RF2BB_PST" : {"bits":"11:8"},
+        "LML1_RF2BB_PRE" : {"bits":"4:0"}
+    },
+    "default": "00000001 00000001"
+},
+{
     "addr" : "0x0027",
     "fields" : {
         "LML2_S3S" : {"bits":"15:14", "options":{"BQ":3, "BI":2, "AQ":1, "AI":0}},
@@ -153,6 +187,22 @@
         "LML2_AIP" : {"bits":"1:0"}
     },
     "default": "11100100 11100100"
+},
+{
+    "addr" : "0x0028",
+    "fields" : {
+        "LML2_BB2RF_PST" : {"bits":"11:8"},
+        "LML2_BB2RF_PRE" : {"bits":"4:0"}
+    },
+    "default": "00000001 00000001"
+},
+{
+    "addr" : "0x0029",
+    "fields" : {
+        "LML2_RF2BB_PST" : {"bits":"11:8"},
+        "LML2_RF2BB_PRE" : {"bits":"4:0"}
+    },
+    "default": "00000001 00000001"
 },
 {
     "addr" : "0x002A",
@@ -213,6 +263,8 @@
     "fields" : {
         "FCLK2_INV" : {"bits":"15"},
         "FCLK1_INV" : {"bits":"14"},
+        "MCLK2_INV" : {"bits":"9"},
+        "MCLK1_INV" : {"bits":"8"},
         "MCLK2SRC" : {"bits":"5:4",
             "options":{
                 "RxTSPCLKA":3,

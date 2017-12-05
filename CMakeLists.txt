@@ -24,11 +24,19 @@ endif()
 ########################################################################
 include_directories(include)
 file(GLOB LMS7002M_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/LMS7002M_*.c")
-add_library(LMS7002M ${LMS7002M_SOURCES})
-install(TARGETS LMS7002M DESTINATION lib${LIB_SUFFIX})
-set_property(TARGET LMS7002M PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+
+if(NOT DEFINED LIB_LMS7002M_NAME)
+    set(LIB_LMS7002M_NAME LMS7002M)
+endif(NOT DEFINED LIB_LMS7002M_NAME)
+
+add_library(${LIB_LMS7002M_NAME} ${LMS7002M_SOURCES})
+install(TARGETS ${LIB_LMS7002M_NAME} DESTINATION lib${LIB_SUFFIX})
+set_property(TARGET ${LIB_LMS7002M_NAME} PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
 ########################################################################
 # install headers
 ########################################################################
-install(DIRECTORY include/LMS7002M DESTINATION include)
+if(NOT DEFINED DONT_INSTALL_LMS7002M_INCLUDE)
+    install(DIRECTORY include/LMS7002M DESTINATION include)
+endif(NOT DEFINED DONT_INSTALL_LMS7002M_INCLUDE)
+

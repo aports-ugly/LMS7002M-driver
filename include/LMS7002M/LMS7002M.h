@@ -76,6 +76,8 @@ struct LMS7002M_struct;
 //! Helpful typedef for the LMS7002M driver instance
 typedef struct LMS7002M_struct LMS7002M_t;
 
+LMS7002M_API void* LMS7002M_get_spi_handle(LMS7002M_t *self);
+
 /*!
  * Create an instance of the LMS7002M driver.
  * This call does not reset or initialize the LMS7002M.
@@ -207,6 +209,8 @@ LMS7002M_API void LMS7002M_reset_lml_fifo(LMS7002M_t *self, const LMS7002M_dir_t
  */
 LMS7002M_API void LMS7002M_power_down(LMS7002M_t *self);
 
+LMS7002M_API void LMS7002M_lml_en(LMS7002M_t *self);
+
 /*!
  * Configure the muxing and clocking on a lime light port.
  * This sets the data mode and direction for the DIQ pins,
@@ -223,6 +227,8 @@ LMS7002M_API void LMS7002M_power_down(LMS7002M_t *self);
  */
 LMS7002M_API void LMS7002M_configure_lml_port(LMS7002M_t *self, const LMS7002M_port_t portNo, const LMS7002M_dir_t direction, const int mclkDiv);
 
+LMS7002M_API void LMS7002M_configure_lml_port_rdfclk(LMS7002M_t *self, const LMS7002M_port_t portNo);
+
 /*!
  * Invert the feedback clock used with the transmit pins.
  * This call inverts both FCLK1 and FCLK2 (only one of which is used).
@@ -231,6 +237,11 @@ LMS7002M_API void LMS7002M_configure_lml_port(LMS7002M_t *self, const LMS7002M_p
  */
 LMS7002M_API void LMS7002M_invert_fclk(LMS7002M_t *self, const bool invert);
 
+LMS7002M_API void LMS7002M_invert_fclk_ex(LMS7002M_t *self, const LMS7002M_port_t portNo, const bool invert);
+
+LMS7002M_API void LMS7002M_invert_mclk_ex(LMS7002M_t *self, const LMS7002M_port_t portNo, const bool invert);
+
+LMS7002M_API void LMS7002M_set_drive_strength(LMS7002M_t *self, const bool highdiq1, const bool highdiq2);
 /*!
  * Enable digital loopback inside the lime light.
  * This call also applies the tx fifo write clock to the rx fifo.
@@ -238,6 +249,8 @@ LMS7002M_API void LMS7002M_invert_fclk(LMS7002M_t *self, const bool invert);
  * \param self an instance of the LMS7002M driver
  */
 LMS7002M_API void LMS7002M_setup_digital_loopback(LMS7002M_t *self);
+
+LMS7002M_API void LMS7002M_setup_rx_lfsr(LMS7002M_t *self);
 
 /*!
  * Set the MAC mux for channel A/B shadow registers.
@@ -270,6 +283,10 @@ LMS7002M_API void LMS7002M_set_mac_dir(LMS7002M_t *self, const LMS7002M_dir_t di
  * \param positions sample position 0-3 (see LMS7002M_LML_*)
  */
 LMS7002M_API void LMS7002M_set_diq_mux(LMS7002M_t *self, const LMS7002M_dir_t direction, const int positions[4]);
+
+
+LMS7002M_API void LMS7002M_set_jesd207_latency(LMS7002M_t *self, const LMS7002M_dir_t direction, int start, int stop);
+
 
 //=====================================================================//
 // LDO
@@ -335,6 +352,8 @@ LMS7002M_API void LMS7002M_afe_enable(LMS7002M_t *self, const LMS7002M_dir_t dir
  * \return 0 for success or error code on failure
  */
 LMS7002M_API int LMS7002M_set_data_clock(LMS7002M_t *self, const double fref, const double fout, double *factual);
+
+LMS7002M_API int LMS7002M_set_data_clock_div(LMS7002M_t *self, const double fref, bool div_dac, unsigned divh, const double fout, double *factual);
 
 //=====================================================================//
 // Shared helper functions for Rx and TX tsp

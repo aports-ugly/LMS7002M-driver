@@ -4,7 +4,7 @@
 /// Tx filter calibration functions for the LMS7002M C driver.
 ///
 /// \copyright
-/// Copyright (c) 2016-2016 Fairwaves, Inc.
+/// Copyright (c) 2016-2017 Fairwaves, Inc.
 /// Copyright (c) 2016-2016 Rice University
 /// SPDX-License-Identifier: Apache-2.0
 /// http://www.apache.org/licenses/LICENSE-2.0
@@ -43,7 +43,8 @@ static int tx_cal_loop(
     //--- cgen already set prior ---//
 
     //--- gain selection ---//
-    const int rssi_value_50k = cal_gain_selection(self, channel);
+    const uint16_t saturation_level = 0x05000; //-3dBFS
+    const int rssi_value_50k = cal_gain_selection(self, channel, saturation_level);
 
     //--- setup calibration tone ---//
     setup_tx_cal_tone(self, channel, bw);
@@ -56,7 +57,7 @@ static int tx_cal_loop(
     {
         if (iter++ == MAX_CAL_LOOP_ITERS)
         {
-            LMS7_logf(LMS7_ERROR, "failed to converge when calibrating %s", reg_name);
+            LMS7_logf(LMS7_ERROR, self, "failed to converge when calibrating %s", reg_name);
             return -1;
         }
 
@@ -76,15 +77,15 @@ static int tx_cal_loop(
 
         if (*reg_ptr < 0 || *reg_ptr > reg_max)
         {
-            LMS7_logf(LMS7_ERROR, "failed to cal %s -> %d", reg_name, *reg_ptr);
+            LMS7_logf(LMS7_ERROR, self, "failed to cal %s -> %d", reg_name, *reg_ptr);
             return -1;
         }
 
         rssi_value = cal_read_rssi(self, channel);
         adjust = (rssi_value < rssi_value_50k*0.7071)?-1:+1;
     }
-    LMS7_logf(LMS7_DEBUG, "%s = %d", reg_name, *reg_ptr);
-    LMS7_logf(LMS7_DEBUG, "ccal_lpflad_tbb = %d", LMS7002M_regs(self)->reg_0x010a_ccal_lpflad_tbb);
+    LMS7_logf(LMS7_DEBUG, self, "%s = %d", reg_name, *reg_ptr);
+    LMS7_logf(LMS7_DEBUG, self, "ccal_lpflad_tbb = %d", LMS7002M_regs(self)->reg_0x010a_ccal_lpflad_tbb);
     return 0;
 }
 
@@ -173,7 +174,7 @@ static int tx_cal_tbb_lpfs5(LMS7002M_t *self, const LMS7002M_chan_t channel, con
     //--- check filter bounds ---//
     if (bw < 0.8e6 || bw > 3.2e6)
     {
-        LMS7_logf(LMS7_ERROR, "LPFS5 bandwidth not in range[0.8 to 3.2 MHz]");
+        LMS7_log(LMS7_ERROR, self, "LPFS5 bandwidth not in range[0.8 to 3.2 MHz]");
         return -1;
     }
 
@@ -207,7 +208,7 @@ static int tx_cal_tbb_lpflad(LMS7002M_t *self, const LMS7002M_chan_t channel, co
     //--- check filter bounds ---//
     if (bw < 2e6 || bw > 16e6)
     {
-        LMS7_logf(LMS7_ERROR, "LPFLAD bandwidth not in range[2 to 16 MHz]");
+        LMS7_log(LMS7_ERROR, self, "LPFLAD bandwidth not in range[2 to 16 MHz]");
         status = -1;
         goto done;
     }
@@ -245,7 +246,7 @@ static int tx_cal_tbb_lpfh(LMS7002M_t *self, const LMS7002M_chan_t channel, cons
     //--- check filter bounds ---//
     if (bw < 28e6 || bw > 60e6)
     {
-        LMS7_logf(LMS7_ERROR, "LPFH bandwidth not in range[28 to 60 MHz]");
+        LMS7_log(LMS7_ERROR, self, "LPFH bandwidth not in range[28 to 60 MHz]");
         status = -1;
         goto done;
     }
@@ -304,7 +305,7 @@ int LMS7002M_tbb_set_filter_bw(LMS7002M_t *self, const LMS7002M_chan_t channel, 
     status = cal_setup_cgen(self, bw);
     if (status != 0)
     {
-        LMS7_logf(LMS7_ERROR, "cal_setup_cgen() faled");
+        LMS7_log(LMS7_ERROR, self, "cal_setup_cgen() faled");
         goto done;
     }
 
@@ -314,7 +315,7 @@ int LMS7002M_tbb_set_filter_bw(LMS7002M_t *self, const LMS7002M_chan_t channel, 
     status = tx_cal_init(self, channel);
     if (status != 0)
     {
-        LMS7_logf(LMS7_ERROR, "tx_cal_init() failed");
+        LMS7_log(LMS7_ERROR, self, "tx_cal_init() failed");
         goto done;
     }
     LMS7002M_tbb_set_path(self, channel, path);
@@ -323,11 +324,13 @@ int LMS7002M_tbb_set_filter_bw(LMS7002M_t *self, const LMS7002M_chan_t channel, 
     // TBB LPF calibration
     ////////////////////////////////////////////////////////////////////
     if (path == LMS7002M_TBB_S5)  status = tx_cal_tbb_lpfs5(self, channel, bw);
+    //if (path == LMS7002M_TBB_LAD) status = tx_cal_tbb_lpfs5(self, channel, (bw > 3e6) ? 3e6 : bw);
+    if (path == LMS7002M_TBB_LAD) LMS7002M_regs(self)->reg_0x010a_rcal_lpfs5_tbb = 0;
     if (path == LMS7002M_TBB_LAD) status = tx_cal_tbb_lpflad(self, channel, bw);
     if (path == LMS7002M_RBB_HBF) status = tx_cal_tbb_lpfh(self, channel, bw);
     if (status != 0)
     {
-        LMS7_logf(LMS7_ERROR, "tx_cal_tbb_lpf() failed");
+        LMS7_logf(LMS7_ERROR, self, "tx_cal_tbb_lpf() failed");
         goto done;
     }
 
@@ -341,6 +344,7 @@ int LMS7002M_tbb_set_filter_bw(LMS7002M_t *self, const LMS7002M_chan_t channel, 
     const int ccal_lpflad_tbb = LMS7002M_regs(self)->reg_0x010a_ccal_lpflad_tbb;
     const int rcal_lpfs5_tbb = LMS7002M_regs(self)->reg_0x010a_rcal_lpfs5_tbb;
     const int rcal_lpfh_tbb = LMS7002M_regs(self)->reg_0x0109_rcal_lpfh_tbb;
+    const int cg_iamp_tbb = LMS7002M_regs(self)->reg_0x0108_cg_iamp_tbb;
 
     ////////////////////////////////////////////////////////////////////
     // restore original register values
@@ -359,9 +363,12 @@ int LMS7002M_tbb_set_filter_bw(LMS7002M_t *self, const LMS7002M_chan_t channel, 
     LMS7002M_regs(self)->reg_0x0109_rcal_lpfh_tbb = rcal_lpfh_tbb;
     LMS7002M_regs(self)->reg_0x0108_ict_iamp_frp_tbb = 1;
     LMS7002M_regs(self)->reg_0x0108_ict_iamp_gg_frp_tbb = 6;
+    LMS7002M_regs(self)->reg_0x0108_cg_iamp_tbb = cg_iamp_tbb;
     LMS7002M_regs_spi_write(self, 0x0108);
     LMS7002M_regs_spi_write(self, 0x0109);
     LMS7002M_regs_spi_write(self, 0x010a);
+
+    LMS7_logf(LMS7_ERROR, self, "restore reg_0x0108_cg_iamp_tbb = %d", cg_iamp_tbb);
 
     ////////////////////////////////////////////////////////////////////
     // set the filter selection

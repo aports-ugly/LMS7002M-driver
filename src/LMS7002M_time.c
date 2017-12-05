@@ -4,7 +4,7 @@
 /// Time and sleep functions for the LMS7002M C driver.
 ///
 /// \copyright
-/// Copyright (c) 2015-2015 Fairwaves, Inc.
+/// Copyright (c) 2015-2017 Fairwaves, Inc.
 /// Copyright (c) 2015-2015 Rice University
 /// SPDX-License-Identifier: Apache-2.0
 /// http://www.apache.org/licenses/LICENSE-2.0
@@ -14,9 +14,11 @@
 
 #include <LMS7002M/LMS7002M_time.h>
 #include <stdbool.h>
+
+#ifdef SELECT_TIME
+#include <unistd.h>
 #include <sys/time.h>
 #include <sys/select.h>
-#include <unistd.h>
 
 long long LMS7_time_tps(void)
 {
@@ -50,3 +52,17 @@ void LMS7_sleep_until(const long long ticks)
         select(1, NULL, NULL, NULL, &tv);
     }
 }
+#else
+#include <unistd.h>
+
+long long LMS7_time_tps(void)
+{
+    return 1000000;
+}
+
+void LMS7_sleep_for(const long long ticks)
+{
+    usleep((useconds_t)ticks);
+}
+
+#endif
