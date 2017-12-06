@@ -28,13 +28,17 @@ As an alternative, the CMake build exists in the root directory
 to build a LMS7002M static library and to install header files.
 A client project can link against this library in standard fashion.
 
-### Installation instructions
+### Installation instructions for XTRX
+
+XTRX LMS7002M version use some extensions from original library. If you use
+LimeSDR along with XTRX it may lead to a conflict, that's why we use
+alternative library name 'xtrx_lms7002m'
 
 ```
-git clone https://github.com/myriadrf/LMS7002M-driver.git
+git clone https://github.com/xtrx-sdr/LMS7002M-driver.git
 cd LMS7002M-driver
 mkdir build; cd build
-cmake ../
+cmake -DBUILD_SHARED_LIBS=ON -DLIB_LMS7002M_NAME="xtrx_lms7002m" ..
 make -j4
 sudo make install
 ```
